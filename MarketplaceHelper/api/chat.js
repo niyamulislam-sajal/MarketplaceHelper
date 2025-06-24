@@ -27,19 +27,20 @@ export default async function handler(req, res) {
       }),
     });
 
+    const text = await completionRes.text();
+
     if (!completionRes.ok) {
-      const text = await completionRes.text(); // Log full error
-      console.error("OpenAI API error:", text);
-      return res.status(500).json({ error: "OpenAI API error", detail: text });
+      console.error("OpenAI Error:", text);
+      return res.status(500).json({ error: "OpenAI API call failed", details: text });
     }
 
-    const data = await completionRes.json();
-
+    const data = JSON.parse(text);
     const reply = data.choices?.[0]?.message?.content || "No reply received.";
+
     return res.status(200).json({ message: reply });
 
   } catch (err) {
-    console.error("Server error:", err);
-    return res.status(500).json({ error: "Server error", detail: err.message });
+    console.error("Server error:", err.message);
+    return res.status(500).json({ error: "Internal Server Error", detail: err.message });
   }
 }
