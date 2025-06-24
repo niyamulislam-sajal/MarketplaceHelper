@@ -14,7 +14,7 @@ export default async function handler(req, res) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,  // ✅ Correct name from Vercel
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
         model: "gpt-4",
@@ -27,16 +27,14 @@ export default async function handler(req, res) {
       }),
     });
 
-    const text = await completionRes.text();
+    const data = await completionRes.json();
 
     if (!completionRes.ok) {
-      console.error("OpenAI Error:", text);
-      return res.status(500).json({ error: "OpenAI API call failed", details: text });
+      console.error("OpenAI Error:", data);
+      return res.status(500).json({ error: "OpenAI API call failed", details: data });
     }
 
-    const data = JSON.parse(text);
     const reply = data.choices?.[0]?.message?.content || "No reply received.";
-
     return res.status(200).json({ message: reply });
 
   } catch (err) {
