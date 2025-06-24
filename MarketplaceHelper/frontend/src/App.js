@@ -1,143 +1,74 @@
-import React, { useState } from 'react';
+import { useState } from "react";
+import "./App.css";
 
 function App() {
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    name: 'Niyamul',
-  });
-
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [name, setName] = useState("Niyamul");
+  const [reply, setReply] = useState("");
   const [loading, setLoading] = useState(false);
-  const [response, setResponse] = useState('');
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setReply("");
     setLoading(true);
-    setResponse('');
 
     try {
-      const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
-
-      // 1. Create thread
-      const threadRes = await fetch('https://api.openai.com/v1/threads', {
-        method: 'POST',
+      const response = await fetch("/api/chat", {
+        method: "POST",
         headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({ title, description, name }),
       });
 
-      const threadData = await threadRes.json();
-      const threadId = threadData.id;
+      const data = await response.json();
 
-      // 2. Add message to thread
-      await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          role: 'user',
-          content: `Title: ${formData.title}\nDescription: ${formData.description}\nName: ${formData.name}`,
-        }),
-      });
-
-      // 3. Run assistant
-      const runRes = await fetch(
-        `https://api.openai.com/v1/threads/${threadId}/runs`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            assistant_id: 'asst_rILEgVoDQUalVH9cmW7eCaXi',
-          }),
-        }
-      );
-
-      const runData = await runRes.json();
-      const runId = runData.id;
-
-      // 4. Poll until status is completed
-      let status = 'queued';
-      while (status !== 'completed') {
-        await new Promise((resolve) => setTimeout(resolve, 2000)); // wait 2s
-        const statusRes = await fetch(
-          `https://api.openai.com/v1/threads/${threadId}/runs/${runId}`,
-          {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-            },
-          }
-        );
-        const statusData = await statusRes.json();
-        status = statusData.status;
+      if (!response.ok) {
+        throw new Error(data.error || "Something went wrong.");
       }
 
-      // 5. Get messages
-      const messagesRes = await fetch(
-        `https://api.openai.com/v1/threads/${threadId}/messages`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-          },
-        }
-      );
-
-      const messagesData = await messagesRes.json();
-      const lastMessage = messagesData.data.find(
-        (msg) => msg.role === 'assistant'
-      );
-
-      setResponse(lastMessage?.content[0]?.text?.value || 'No response received.');
-    } catch (error) {
-      setResponse('❌ Error: ' + error.message);
+      setReply(data.reply);
+    } catch (err) {
+      setReply("❌ Error: " + err.message);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
-    <div className="App" style={{ maxWidth: '600px', margin: '40px auto' }}>
+    <div className="App" style={{ textAlign: "center", marginTop: "40px" }}>
       <h1>Ask Your Assistant</h1>
       <form onSubmit={handleSubmit}>
         <input
-          name="title"
-          placeholder="Title"
-          value={formData.title}
-          onChange={handleChange}
+          type="text"
+          placeholder="Enter title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
           required
         />
+        <br />
         <textarea
-          name="description"
-          placeholder="Description"
-          value={formData.description}
-          onChange={handleChange}
+          placeholder="Enter description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           required
         />
-        <select name="name" value={formData.name} onChange={handleChange}>
+        <br />
+        <select value={name} onChange={(e) => setName(e.target.value)}>
           <option value="Niyamul">Niyamul</option>
           <option value="Sajib">Sajib</option>
         </select>
+        <br />
         <button type="submit" disabled={loading}>
-          {loading ? 'Sending...' : 'Submit'}
+          {loading ? "Sending..." : "Submit"}
         </button>
       </form>
 
-      {response && (
-        <div style={{ marginTop: '20px', background: '#f1f1f1', padding: '15px' }}>
-          <h3>Assistant Response:</h3>
-          <pre>{response}</pre>
+      {reply && (
+        <div style={{ marginTop: "20px", whiteSpace: "pre-wrap" }}>
+          <strong>Assistant:</strong>
+          <p>{reply}</p>
         </div>
       )}
     </div>
@@ -145,3 +76,4 @@ function App() {
 }
 
 export default App;
+
