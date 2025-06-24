@@ -14,7 +14,7 @@ export default async function handler(req, res) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, // Make sure this matches your Vercel environment variable
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,  // ✅ Correct name from Vercel
       },
       body: JSON.stringify({
         model: "gpt-4",
