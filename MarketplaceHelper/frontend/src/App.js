@@ -10,8 +10,16 @@ const handleSubmit = async (e) => {
       body: JSON.stringify({ title, description, name }),
     });
 
-    const data = await res.json();
-    setResponse(data.message || data.error || "No response received.");
+    const text = await res.text(); // Always fetch as text to avoid crashing on empty or invalid JSON
+
+    if (!res.ok) {
+      console.error("API Error Response:", text);
+      setResponse("❌ Assistant error: " + text);
+    } else {
+      const data = JSON.parse(text);
+      setResponse(data.message || data.error || "No response received.");
+    }
+
   } catch (err) {
     console.error("Fetch Error:", err);
     setResponse("❌ Failed to contact assistant.");
@@ -19,3 +27,4 @@ const handleSubmit = async (e) => {
 
   setLoading(false);
 };
+
