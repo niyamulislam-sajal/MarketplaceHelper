@@ -1,58 +1,32 @@
-import React, { useState } from "react";
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setResponse("");
 
-const ChatForm = () => {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [name, setName] = useState("Niyamul");
-  const [response, setResponse] = useState("");
-  const [loading, setLoading] = useState(false);
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`, // Will be injected by Vite/Cra
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo", // use gpt-4 only if you have access
+        messages: [
+          {
+            role: "user",
+            content: `Marketplace Query:\nTitle: ${title}\nDescription: ${description}\nSubmitted by: ${name}`,
+          },
+        ],
+      }),
+    });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setResponse("");
+    const data = await res.json();
+    setResponse(data.choices?.[0]?.message?.content || "No reply received.");
+  } catch (err) {
+    console.error("Fetch Error:", err);
+    setResponse("❌ Failed to contact assistant.");
+  }
 
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description, name }),
-      });
-
-      const data = await res.json();
-      setResponse(data.message || data.error || "No response received.");
-    } catch (err) {
-      console.error("Fetch Error:", err);
-      setResponse("❌ Failed to contact assistant.");
-    }
-
-    setLoading(false);
-  };
-
-  return (
-    <div style={{ padding: "2rem" }}>
-      <h2>🧠 Marketplace Assistant</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          placeholder="Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        /><br />
-        <textarea
-          placeholder="Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        /><br />
-        <button type="submit" disabled={loading}>
-          {loading ? "Thinking..." : "Ask Assistant"}
-        </button>
-      </form>
-      <div style={{ marginTop: "1rem" }}>
-        <strong>Response:</strong>
-        <pre>{response}</pre>
-      </div>
-    </div>
-  );
+  setLoading(false);
 };
-
-export default ChatForm;
